@@ -1,0 +1,33 @@
+name: Create Release ZIP
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Create Release Asset
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Create ZIP file
+        run: |
+          cd custom_components/ha_imap_parcel
+          zip -r ../../ha_imap_parcel.zip .
+          cd ../..
+          ls -la ha_imap_parcel.zip
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./ha_imap_parcel.zip
+          asset_name: ha_imap_parcel.zip
+          asset_content_type: application/zip
