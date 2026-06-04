@@ -5,9 +5,9 @@
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/PineappleEmperor/ha-imap-parcel",
-  "issue_tracker": "https://github.com/PineappleEmperor/ha-imap-parcel/issues",
   "integration_type": "service",
   "iot_class": "calculated",
+  "issue_tracker": "https://github.com/PineappleEmperor/ha-imap-parcel/issues",
   "requirements": ["beautifulsoup4>=4.12.0"],
   "version": "1.0.0"
 }
