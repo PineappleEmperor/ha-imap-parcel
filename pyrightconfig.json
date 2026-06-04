@@ -1,0 +1,7 @@
+{
+  "pythonVersion": "3.14",
+  "typeCheckingMode": "strict",
+  "reportMissingImports": false,
+  "reportMissingModuleSource": false,
+  "include": ["custom_components"]
+}

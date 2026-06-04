@@ -1,0 +1,58 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "HA IMAP Parcel",
+        "description": "Select one or more Email IMAP accounts to monitor for delivery emails.",
+        "data": {
+          "email_ha_entry_ids": "Email IMAP account(s)",
+          "backfill_days": "Days to scan back on setup"
+        }
+      }
+    },
+    "abort": {
+      "no_email_ha_entries": "No Email IMAP integration found. Set up email_ha first.",
+      "already_configured": "Already configured."
+    },
+    "error": {
+      "no_entries_selected": "Select at least one email account."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "HA IMAP Parcel Options",
+        "description": "Custom sender rules: {custom_rules}\n\nBackfill window: {backfill_days} days",
+        "data": {
+          "action": "Action"
+        }
+      },
+      "add_rule": {
+        "title": "Add Sender Rule",
+        "description": "Map a sender email address to a courier.",
+        "data": {
+          "sender": "Sender email address",
+          "courier": "Courier name",
+          "confidence": "Confidence level"
+        }
+      },
+      "remove_rule": {
+        "title": "Remove Sender Rule",
+        "data": {
+          "rule_index": "Rule to remove"
+        }
+      },
+      "edit_backfill": {
+        "title": "Edit Backfill Window",
+        "description": "How many days of past emails to scan when the integration starts.",
+        "data": {
+          "backfill_days": "Backfill days"
+        }
+      }
+    },
+    "error": {
+      "empty_sender": "Sender address cannot be empty.",
+      "invalid_email": "Must be a valid email address."
+    }
+  }
+}
