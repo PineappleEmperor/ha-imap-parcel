@@ -89,10 +89,18 @@ class ParcelTrackingCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
 
     async def _async_setup(self) -> None:
         """One-time init: load store, resolve email addresses, backfill, subscribe."""
+        _LOGGER.info("Setting up HA IMAP Parcel coordinator")
         await self._store.async_load()
         self._resolve_email_addresses()
+        if not self._email_entry_map:
+            _LOGGER.warning("No email_ha entries resolved — backfill and event tracking will be skipped")
         await self._async_backfill()
         self._subscribe_events()
+        _LOGGER.info(
+            "Setup complete: %d deliveries in store, watching %d email account(s)",
+            len(self._store.get_all()),
+            len(self._email_entry_map),
+        )
 
     async def _async_update_data(self) -> list[dict[str, Any]]:
         """Hourly: expire old delivered parcels and return current list."""
@@ -149,6 +157,12 @@ class ParcelTrackingCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
             if sender:
                 known_senders.append(sender)
 
+        _LOGGER.info(
+            "Backfilling from %s across %d entry(s), %d known sender(s)",
+            since,
+            len(self._email_ha_entry_ids),
+            len(known_senders),
+        )
         for entry_id in self._email_ha_entry_ids:
             for sender in known_senders:
                 await self._async_query_and_process(
@@ -157,7 +171,9 @@ class ParcelTrackingCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
                     max_results=50,
                 )
 
-        self.async_set_updated_data(self._store.get_all())
+        all_deliveries = self._store.get_all()
+        _LOGGER.info("Backfill complete: %d deliveries in store", len(all_deliveries))
+        self.async_set_updated_data(all_deliveries)
 
     async def _async_query_and_process(
         self, entry_id: str, criteria: str, max_results: int = 50
@@ -179,7 +195,7 @@ class ParcelTrackingCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
             emails: list[dict[str, Any]] = cast(
                 list[dict[str, Any]], (result or {}).get("emails", [])
             )
-            _LOGGER.debug(
+            _LOGGER.info(
                 "Query '%s' via entry %s → %d emails", criteria, entry_id, len(emails)
             )
             for email_data in emails:
@@ -201,7 +217,7 @@ class ParcelTrackingCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
         if entry_id is None:
             return
 
-        sender: str = str(event_data.get("sender", ""))
+        sender: str = str(event_data.get("sender_email", ""))
         subject: str = str(event_data.get("subject", ""))
         courier = self._classifier.classify(sender, subject)[0]
         if courier is None:
@@ -219,14 +235,16 @@ class ParcelTrackingCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
         self, email_data: dict[str, Any], entry_id: str
     ) -> None:
         """Classify, parse, and upsert a single email into the delivery store."""
-        sender: str = email_data.get("sender", "")
+        sender: str = email_data.get("sender_email", "")
         subject: str = email_data.get("subject", "")
         uid: str = str(email_data.get("uid", ""))
 
         courier, status, confidence = self._classifier.classify(sender, subject)
         if courier is None:
+            _LOGGER.debug("No rule matched sender=%s subject=%s — skipping", sender, subject)
             return
 
+        _LOGGER.debug("Classified email uid=%s as courier=%s status=%s confidence=%s", uid, courier, status, confidence)
         if self._store.is_uid_known(uid):
             _LOGGER.debug("Skipping already-processed UID %s", uid)
             return
